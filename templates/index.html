@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>Welcome to Oscar Pool</h1>
+        {% if not session.get('discord_user') %}
+            <p>Please login with Discord to participate in the Oscar Pool.</p>
+            <a href="{{ url_for('login') }}" class="btn btn-primary">Login with Discord</a>
+        {% else %}
+            {% if is_admin %}
+                <div class="mb-4">
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-info">Admin Dashboard</a>
+                </div>
+            {% endif %}
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Your Predictions</h5>
+                    {% if predictions %}
+                        <ul class="list-group">
+                        {% for prediction in predictions %}
+                            <li class="list-group-item">
+                                {{ prediction.category }}: {{ prediction.nominee }}
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>You haven't made any predictions yet.</p>
+                        {# <a href="{{ url_for('make_predictions') }}" class="btn btn-primary">Make Predictions</a> #}
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

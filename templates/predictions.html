@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Make Predictions{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Make Your Oscar Predictions</h2>
+        <form method="POST">
+            {% for category in categories %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">{{ category.name }}</h5>
+                    <div class="form-group">
+                        <select name="category_{{ category.id }}" class="form-control" required>
+                            <option value="">Select a nominee...</option>
+                            {% for nominee in category.nominees %}
+                            <option value="{{ nominee.id }}" {% if predictions.get(category.id) == nominee.id %}selected{% endif %}>
+                                {{ nominee.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary">Submit Predictions</button>
+        </form>
+    </div>
+</div>
+{% endblock %} 

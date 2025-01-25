@@ -1,0 +1,30 @@
+# Flask and Extensions
+Flask==3.0.2
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.0.5
+Flask-Login==0.6.3
+
+# Database
+SQLAlchemy==2.0.27
+alembic==1.13.1
+
+# OAuth and HTTP
+requests==2.31.0
+requests-oauthlib==1.3.1
+oauthlib==3.2.2
+
+# Security
+python-dotenv==1.0.1
+cryptography==42.0.2
+
+# Development
+python-dateutil==2.8.2
+Werkzeug==3.0.1
+click==8.1.7
+itsdangerous==2.1.2
+Jinja2==3.1.3
+MarkupSafe==2.1.5
+
+# Testing (optional)
+pytest==8.0.0
+pytest-flask==1.3.0 

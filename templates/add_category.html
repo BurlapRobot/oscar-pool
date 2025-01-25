@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Add Category{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h2>Add Oscar Category</h2>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="category_name" class="form-label">Category Name</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="category_name" 
+                               name="category_name" 
+                               required 
+                               placeholder="e.g., Best Picture">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Nominees</label>
+                        <div id="nominees_container">
+                            <div class="nominee-entry input-group mb-2">
+                                <input type="text" 
+                                       class="form-control" 
+                                       name="nominees[]" 
+                                       required 
+                                       placeholder="Enter nominee name">
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="addNomineeField()">
+                            Add Another Nominee
+                        </button>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Save Category</button>
+                        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function addNomineeField() {
+    const container = document.getElementById('nominees_container');
+    const newField = document.createElement('div');
+    newField.className = 'nominee-entry input-group mb-2';
+    newField.innerHTML = `
+        <input type="text" 
+               class="form-control" 
+               name="nominees[]" 
+               required 
+               placeholder="Enter nominee name">
+        <button class="btn btn-outline-danger" 
+                type="button" 
+                onclick="this.parentElement.remove()">
+            Remove
+        </button>
+    `;
+    container.appendChild(newField);
+}
+</script>
+{% endblock %} 

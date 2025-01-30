@@ -32,22 +32,13 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="movie" class="form-label">Movie (Optional)</label>
+                        <label for="movie" class="form-label">Movie {% if category.show_movie %}(Required){% else %}(Optional){% endif %}</label>
                         <input type="text" 
                                class="form-control" 
                                id="movie" 
                                name="movie" 
+                               {% if category.show_movie %}required{% endif %}
                                placeholder="Enter movie name">
-                    </div>
-
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" 
-                               class="form-check-input" 
-                               id="show_movie" 
-                               name="show_movie">
-                        <label class="form-check-label" for="show_movie">
-                            Show Movie Name with Nominee
-                        </label>
                     </div>
 
                     <div class="d-grid gap-2">
@@ -82,8 +73,8 @@
                                         {% for nominee in category.nominees %}
                                             <li class="list-group-item">
                                                 {{ nominee.name }}
-                                                {% if nominee.show_movie and nominee.movie %}
-                                                    <small class="text-muted">in ({{ nominee.movie }})</small>
+                                                {% if category.show_movie and nominee.movie %}
+                                                    <small class="text-muted">({{ nominee.movie }})</small>
                                                 {% endif %}
                                             </li>
                                         {% endfor %}

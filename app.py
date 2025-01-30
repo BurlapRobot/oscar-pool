@@ -4,6 +4,7 @@ from requests_oauthlib import OAuth2Session
 import os
 import configparser
 from datetime import timedelta
+from flask_migrate import Migrate
 
 # Load config
 config = configparser.ConfigParser()
@@ -15,6 +16,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = config['Flask']['SQLALCHEMY_DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 # Load Discord settings from config
 DISCORD_CLIENT_ID = config['Discord']['CLIENT_ID']
@@ -34,12 +36,12 @@ class User(db.Model):
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    show_movie = db.Column(db.Boolean, default=False)  # Moved from Nominee to Category
 
 class Nominee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     movie = db.Column(db.String(100))  # Optional movie field
-    show_movie = db.Column(db.Boolean, default=False)  # Whether to display movie name
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
     category = db.relationship('Category', backref=db.backref('nominees', lazy=True))
 
@@ -151,19 +153,32 @@ def add_nominee():
     if 'discord_user' not in session or not is_admin():
         flash('Access denied. Admins only.', 'error')
         return redirect(url_for('index'))
+    
     categories = Category.query.all()
+    
+    # Get the specific category if category_id is provided
+    category_id = request.args.get('category_id')
+    category = Category.query.get(category_id) if category_id else None
+    
     if request.method == 'POST':
         nominee_name = request.form['nominee_name']
         category_id = request.form['category_id']
+        movie = request.form.get('movie', '')
+        
         if nominee_name and category_id:
-            new_nominee = Nominee(name=nominee_name, category_id=category_id)
+            new_nominee = Nominee(
+                name=nominee_name, 
+                category_id=category_id,
+                movie=movie
+            )
             db.session.add(new_nominee)
             db.session.commit()
             flash('Nominee added successfully!', 'success')
         else:
             flash('Nominee name and category must be selected.', 'error')
         return redirect(url_for('add_nominee'))
-    return render_template('add_nominee.html', categories=categories)
+    
+    return render_template('add_nominee.html', categories=categories, category=category)
 
 @app.route('/admin/dashboard')
 def admin_dashboard():
@@ -223,6 +238,71 @@ def add_category():
             return redirect(url_for('add_category'))
     
     return render_template('add_category.html')
+
+@app.route('/admin/category/edit/<int:category_id>', methods=['GET', 'POST'])
+def edit_category(category_id):
+    if 'discord_user' not in session or not is_admin():
+        flash('Access denied. Admins only.', 'error')
+        return redirect(url_for('index'))
+
+    category = Category.query.get_or_404(category_id)
+    
+    if request.method == 'POST':
+        category_name = request.form.get('category_name')
+        show_movie = request.form.get('show_movie') == 'on'
+        
+        if category_name:
+            category.name = category_name
+            category.show_movie = show_movie
+            db.session.commit()
+            flash('Category updated successfully!', 'success')
+            return redirect(url_for('admin_dashboard'))
+        else:
+            flash('Category name is required.', 'error')
+    
+    return render_template('edit_category.html', category=category)
+
+@app.route('/admin/nominee/edit/<int:nominee_id>', methods=['GET', 'POST'])
+def edit_nominee(nominee_id):
+    if 'discord_user' not in session or not is_admin():
+        flash('Access denied. Admins only.', 'error')
+        return redirect(url_for('index'))
+    
+    nominee = Nominee.query.get_or_404(nominee_id)
+    
+    if request.method == 'POST':
+        name = request.form.get('nominee_name')
+        movie = request.form.get('movie', '')
+        
+        if name:
+            nominee.name = name
+            nominee.movie = movie
+            db.session.commit()
+            flash('Nominee updated successfully!', 'success')
+            return redirect(url_for('edit_category', category_id=nominee.category_id))
+        else:
+            flash('Nominee name is required.', 'error')
+    
+    return render_template('edit_nominee.html', nominee=nominee)
+
+@app.route('/admin/nominee/delete/<int:nominee_id>', methods=['POST'])
+def delete_nominee(nominee_id):
+    if 'discord_user' not in session or not is_admin():
+        flash('Access denied. Admins only.', 'error')
+        return redirect(url_for('index'))
+    
+    nominee = Nominee.query.get_or_404(nominee_id)
+    category_id = nominee.category_id
+    
+    try:
+        db.session.delete(nominee)
+        db.session.commit()
+        flash('Nominee deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error deleting nominee.', 'error')
+    
+    return redirect(url_for('edit_category', category_id=category_id))
 
 # Database initialization
 def init_db(app):

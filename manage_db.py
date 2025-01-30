@@ -85,80 +85,83 @@ def export_categories():
     """Export categories and nominees to a CSV file"""
     import csv
     from datetime import datetime
-    from app import db, Category, Nominee
     
-    categories = Category.query.all()
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    filename = f'oscars_export_{timestamp}.csv'
-    
-    with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(['Category', 'Nominee', 'Movie', 'ShowMovie'])
+    with app.app_context():
+        categories = Category.query.all()
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'oscars_export_{timestamp}.csv'
         
-        for category in categories:
-            for nominee in category.nominees:
-                writer.writerow([
-                    category.name,
-                    nominee.name,
-                    nominee.movie or '',  # Use empty string if movie is None
-                    '1' if nominee.show_movie else '0'
-                ])
-    
-    print(f"Exported categories and nominees to {filename}")
+        with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(['Category', 'ShowMovie', 'Nominee', 'Movie'])
+            
+            for category in categories:
+                for nominee in category.nominees:
+                    writer.writerow([
+                        category.name,
+                        '1' if category.show_movie else '0',  # Changed from nominee to category
+                        nominee.name,
+                        nominee.movie or ''
+                    ])
+        
+        print(f"Exported categories and nominees to {filename}")
 
 def import_categories(filename):
     """Import categories and nominees from a CSV file"""
     import csv
-    from app import db, Category, Nominee
     
     if not os.path.exists(filename):
         print(f"Error: File {filename} not found")
         return
     
     try:
-        with open(filename, 'r', encoding='utf-8') as csvfile:
-            reader = csv.DictReader(csvfile)
-            
-            for row in reader:
-                category_name = row['Category'].strip()
-                nominee_name = row['Nominee'].strip() if row['Nominee'] else None
-                movie = row.get('Movie', '').strip() or None  # Convert empty string to None
-                show_movie = row.get('ShowMovie', '0').strip() in ['1', 'true', 'True']
+        with app.app_context():
+            with open(filename, 'r', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
                 
-                if not category_name:
-                    continue
-                
-                # Find or create category
-                category = Category.query.filter_by(name=category_name).first()
-                if not category:
-                    category = Category(name=category_name)
-                    db.session.add(category)
-                    db.session.flush()
-                
-                # Add or update nominee
-                if nominee_name:
-                    nominee = Nominee.query.filter_by(
-                        category_id=category.id,
-                        name=nominee_name
-                    ).first()
+                for row in reader:
+                    category_name = row['Category'].strip()
+                    nominee_name = row['Nominee'].strip() if row['Nominee'] else None
+                    movie = row.get('Movie', '').strip() or None
+                    show_movie = row.get('ShowMovie', '0').strip() in ['1', 'true', 'True']
                     
-                    if nominee:
-                        # Update existing nominee
-                        nominee.movie = movie
-                        nominee.show_movie = show_movie
-                    else:
-                        # Create new nominee
-                        nominee = Nominee(
-                            name=nominee_name,
-                            category_id=category.id,
-                            movie=movie,
-                            show_movie=show_movie
+                    if not category_name:
+                        continue
+                    
+                    # Find or create category
+                    category = Category.query.filter_by(name=category_name).first()
+                    if not category:
+                        category = Category(
+                            name=category_name,
+                            show_movie=show_movie  # Set show_movie on category
                         )
-                        db.session.add(nominee)
-        
-        db.session.commit()
-        print("Import completed successfully")
-        
+                        db.session.add(category)
+                        db.session.flush()
+                    else:
+                        category.show_movie = show_movie  # Update existing category
+                    
+                    # Add or update nominee
+                    if nominee_name:
+                        nominee = Nominee.query.filter_by(
+                            category_id=category.id,
+                            name=nominee_name
+                        ).first()
+                        
+                        if nominee:
+                            # Update existing nominee
+                            nominee.movie = movie
+                        else:
+                            # Create new nominee
+                            nominee = Nominee(
+                                name=nominee_name,
+                                category_id=category.id,
+                                movie=movie
+                            )
+                            db.session.add(nominee)
+            
+            db.session.commit()
+            print("Import completed successfully")
+            
     except Exception as e:
         db.session.rollback()
         print(f"Error during import: {e}")

@@ -31,6 +31,25 @@
                                placeholder="Enter nominee name">
                     </div>
 
+                    <div class="mb-3">
+                        <label for="movie" class="form-label">Movie (Optional)</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="movie" 
+                               name="movie" 
+                               placeholder="Enter movie name">
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" 
+                               class="form-check-input" 
+                               id="show_movie" 
+                               name="show_movie">
+                        <label class="form-check-label" for="show_movie">
+                            Show Movie Name with Nominee
+                        </label>
+                    </div>
+
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">Add Nominee</button>
                         <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
@@ -61,7 +80,12 @@
                                 {% if category.nominees %}
                                     <ul class="list-group">
                                         {% for nominee in category.nominees %}
-                                            <li class="list-group-item">{{ nominee.name }}</li>
+                                            <li class="list-group-item">
+                                                {{ nominee.name }}
+                                                {% if nominee.show_movie and nominee.movie %}
+                                                    <small class="text-muted">in ({{ nominee.movie }})</small>
+                                                {% endif %}
+                                            </li>
                                         {% endfor %}
                                     </ul>
                                 {% else %}

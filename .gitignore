@@ -26,6 +26,9 @@ cert.pem
 key.pem
 
 
+# Data
+oscars.csv
+
 # Flask
 instance/
 .webassets-cache

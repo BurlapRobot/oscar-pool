@@ -7,3 +7,6 @@ CLIENT_ID = 123456789012345678
 CLIENT_SECRET = your_discord_client_secret_here
 REDIRECT_URI = http://localhost:5001/callback
 ALLOWED_GUILD_ID = 987654321098765432
+
+[Data]
+DATA_FILE = oscars.csv

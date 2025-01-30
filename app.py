@@ -38,6 +38,8 @@ class Category(db.Model):
 class Nominee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    movie = db.Column(db.String(100))  # Optional movie field
+    show_movie = db.Column(db.Boolean, default=False)  # Whether to display movie name
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
     category = db.relationship('Category', backref=db.backref('nominees', lazy=True))
 

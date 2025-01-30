@@ -38,7 +38,11 @@
                                     {% if category.nominees %}
                                         <ul class="list-unstyled mt-2 mb-0">
                                             {% for nominee in category.nominees %}
-                                                <li>• {{ nominee.name }}</li>
+                                                <li>• {{ nominee.name }}
+                                                    {% if nominee.show_movie and nominee.movie %}
+                                                        <small class="text-muted">({{ nominee.movie }})</small>
+                                                    {% endif %}
+                                                </li>
                                             {% endfor %}
                                         </ul>
                                     {% else %}

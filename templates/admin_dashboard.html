@@ -2,6 +2,22 @@
 
 {% block title %}Admin Dashboard{% endblock %}
 
+{% block head %}
+<style>
+    .collapse-icon {
+        transition: transform 0.2s;
+        display: inline-block;
+    }
+    [aria-expanded="true"] .collapse-icon .bi-chevron-down {
+        transform: rotate(90deg);
+    }
+    [aria-expanded="false"] .collapse-icon .bi-chevron-down {
+        transform: rotate(0deg);
+    }
+
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="row mb-4">
@@ -9,9 +25,129 @@
             <h1>Admin Dashboard</h1>
         </div>
         <div class="col-md-4 text-end">
-            <a href="{{ url_for('add_category') }}" class="btn btn-primary">
+            <a href="{{ url_for('add_category') }}" class="btn btn-primary me-2">
                 <i class="bi bi-plus-circle"></i> Add New Category
             </a>
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPoolModal">
+                <i class="bi bi-plus-circle"></i> Add New Pool
+            </button>
+        </div>
+    </div>
+
+    <!-- Pools Section -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Prediction Pools</h3>
+                </div>
+                <div class="card-body">
+                    {% if pools %}
+                        <div class="list-group">
+                            {% for pool in pools %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-1">{{ pool.name }}</h5>
+                                        <small class="text-muted">Created: {{ pool.created_at.strftime('%Y-%m-%d') }}</small>
+                                    </div>
+                                    <div class="btn-group">
+                                        <form action="{{ url_for('toggle_pool', pool_id=pool.id) }}" method="POST" class="d-inline">
+                                            <button type="submit" 
+                                                    class="btn btn-sm {% if pool.is_active %}btn-warning{% else %}btn-success{% endif %}">
+                                                {% if pool.is_active %}Deactivate{% else %}Activate{% endif %}
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No prediction pools created yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Predictions Section -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">User Predictions</h3>
+                </div>
+                <div class="card-body">
+                    {% if pools %}
+                        <div class="mb-3">
+                            <select class="form-select" id="poolSelector" onchange="window.location.href='{{ url_for('admin_dashboard') }}?pool_id=' + this.value">
+                                <option value="">Select a pool...</option>
+                                {% for pool in pools %}
+                                    <option value="{{ pool.id }}" {% if selected_pool and selected_pool.id == pool.id %}selected{% endif %}>
+                                        {{ pool.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Update the predictions table section -->
+                        <div class="table-responsive">
+                            {% set ns = namespace(current_user=None) %}
+                            {% if selected_pool and user_predictions %}
+                                {% for pred in user_predictions %}
+                                    {% if ns.current_user != pred.user.username %}
+                                        {% set ns.current_user = pred.user.username %}
+                                        {% if not loop.first %}
+                                            </tbody></table></div>  <!-- Close previous user's table -->
+                                        {% endif %}
+                                        
+                                        <!-- User header and delete button -->
+                                        <div class="d-flex justify-content-between align-items-center bg-light p-3 mb-2 border rounded">
+                                            <h5 class="mb-0">{{ pred.user.username }}</h5>
+                                            <form action="{{ url_for('delete_user_pool_predictions') }}" 
+                                                  method="POST" 
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('Are you sure you want to delete all predictions for {{ pred.user.username }} in this pool?')">
+                                                <input type="hidden" name="user_id" value="{{ pred.user.id }}">
+                                                <input type="hidden" name="pool_id" value="{{ selected_pool.id }}">
+                                                <button type="submit" class="btn btn-sm btn-danger">Delete All Predictions</button>
+                                            </form>
+                                        </div>
+                                        
+                                        <!-- Start new table for this user's predictions -->
+                                        <div class="ms-4 mb-4">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Category</th>
+                                                    <th>Prediction</th>
+                                                    <th>Last Updated</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                    {% endif %}
+                                    <tr>
+                                        <td>{{ pred.category.name }}</td>
+                                        <td>
+                                            {{ pred.nominee.name }}
+                                            {% if pred.category.show_movie and pred.nominee.movie %}
+                                                <br><small class="text-muted">{{ pred.nominee.movie }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ pred.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    </tr>
+                                    {% if loop.last %}
+                                        </tbody></table></div>  <!-- Close last user's table -->
+                                    {% endif %}
+                                {% endfor %}
+                            {% elif selected_pool %}
+                                <p class="text-muted">No predictions made in this pool yet.</p>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No pools created yet.</p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 
@@ -27,7 +163,13 @@
                             {% for category in categories %}
                                 <div class="list-group-item">
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <h5 class="mb-1">{{ category.name }}</h5>
+                                        <h5 class="mb-1">
+                                            <a class="text-decoration-none text-dark collapsed" data-bs-toggle="collapse" 
+                                               href="#collapse{{ category.id }}" role="button" 
+                                               aria-expanded="false" aria-controls="collapse{{ category.id }}">
+                                                <i class="bi bi-chevron-down collapse-icon"></i> {{ category.name }}
+                                            </a>
+                                        </h5>
                                         <div class="btn-group">
                                             <a href="{{ url_for('edit_category', category_id=category.id) }}" 
                                                class="btn btn-sm btn-outline-secondary">
@@ -40,15 +182,25 @@
                                         </div>
                                     </div>
                                     {% if category.nominees %}
-                                        <ul class="list-unstyled mt-2 mb-0">
+                                        <div class="collapse" id="collapse{{ category.id }}">
+                                        <ul class="list-group">
                                             {% for nominee in category.nominees %}
-                                                <li>• {{ nominee.name }}
-                                                    {% if category.show_movie and nominee.movie %}
-                                                        <small class="text-muted">({{ nominee.movie }})</small>
-                                                    {% endif %}
-                                                </li>
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                {{ nominee.name }}
+                                                {% if category.show_movie and nominee.movie is not none and nominee.movie %}({{ nominee.movie }}){% endif %}
+                                                {% if nominee.winner is not none and nominee.winner %}
+                                                    <span class="badge bg-success">Winner</span>
+                                                {% endif %}
+                                                <div class="btn-group">
+                                                    <a href="{{ url_for('edit_nominee', nominee_id=nominee.id) }}" class="btn btn-sm btn-primary">Edit</a>
+                                                    <form action="{{ url_for('delete_nominee', nominee_id=nominee.id) }}" method="POST" class="d-inline">
+                                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                                                    </form>
+                                                </div>
+                                            </li>
                                             {% endfor %}
                                         </ul>
+                                        </div>
                                     {% else %}
                                         <p class="text-muted mb-0 mt-2">No nominees added yet.</p>
                                     {% endif %}
@@ -62,6 +214,30 @@
                     No categories have been added yet. Click "Add New Category" to get started.
                 </div>
             {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add Pool Modal -->
+<div class="modal fade" id="addPoolModal" tabindex="-1" aria-labelledby="addPoolModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('manage_pools') }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addPoolModalLabel">Add New Prediction Pool</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="pool_name" class="form-label">Pool Name</label>
+                        <input type="text" class="form-control" id="pool_name" name="pool_name" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Pool</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

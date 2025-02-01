@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Make Predictions - {{ pool.name }}</h2>
+    
+    <form method="POST">
+        {% for category in categories %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">{{ category.name }}</h5>
+            </div>
+            <div class="card-body">
+                <select name="category_{{ category.id }}" class="form-select" required>
+                    <option value="">Select a nominee...</option>
+                    {% for nominee in category.nominees %}
+                    <option value="{{ nominee.id }}" 
+                            {% if existing_predictions.get(category.id) == nominee.id %}selected{% endif %}>
+                        {{ nominee.name }}
+                        {% if category.show_movie and nominee.movie %}
+                            ({{ nominee.movie }})
+                        {% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary btn-lg">Save Predictions</button>
+            <a href="{{ url_for('index', pool_id=pool.id) }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %} 

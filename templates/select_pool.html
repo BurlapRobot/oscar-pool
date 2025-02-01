@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">Enter Pool Name</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="pool_name" class="form-label">Pool Name</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="pool_name" 
+                                   name="pool_name" 
+                                   required 
+                                   autocomplete="off"
+                                   placeholder="Enter the pool name...">
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Continue</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

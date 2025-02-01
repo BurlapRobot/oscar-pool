@@ -3,36 +3,63 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
-        <h1>Welcome to Oscar Pool</h1>
-        {% if not session.get('discord_user') %}
-            <p>Please login with Discord to participate in the Oscar Pool.</p>
-            <a href="{{ url_for('login') }}" class="btn btn-primary">Login with Discord</a>
-        {% else %}
-            {% if is_admin %}
-                <div class="mb-4">
-                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-info">Admin Dashboard</a>
-                </div>
-            {% endif %}
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Your Predictions</h5>
-                    {% if predictions %}
-                        <ul class="list-group">
-                        {% for prediction in predictions %}
-                            <li class="list-group-item">
-                                {{ prediction.category }}: {{ prediction.nominee }}
-                            </li>
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1>Oscar Pool</h1>
+            {% if not session.get('discord_user') %}
+                <p>Please login with Discord to participate in the Oscar Pool.</p>
+                <a href="{{ url_for('login') }}" class="btn btn-primary">Login with Discord</a>
+            {% else %}
+                {% if is_admin %}
+                    <div class="mb-4">
+                        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-info">Admin Dashboard</a>
+                    </div>
+                {% endif %}
+
+                {% if predictions_by_pool %}
+                    <div class="row">
+                        {% for pool_id, pool_data in predictions_by_pool.items() %}
+                            <div class="col-md-6 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">{{ pool_data.name }}</h5>
+                                        <a href="{{ url_for('make_prediction', pool_id=pool_id) }}" 
+                                           class="btn btn-sm btn-primary">
+                                            Edit Predictions
+                                        </a>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="list-group list-group-flush">
+                                            {% for prediction in pool_data.predictions %}
+                                                <div class="list-group-item">
+                                                    <strong>{{ prediction.category.name }}:</strong>
+                                                    {{ prediction.nominee.name }}
+                                                    {% if prediction.category.show_movie and prediction.nominee.movie %}
+                                                        <br>
+                                                        <small class="text-muted">{{ prediction.nominee.movie }}</small>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p>You haven't made any predictions yet.</p>
-                        {# <a href="{{ url_for('make_predictions') }}" class="btn btn-primary">Make Predictions</a> #}
-                    {% endif %}
-                </div>
-            </div>
-        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Your Predictions</h5>
+                            <p>You haven't made any predictions yet.</p>
+                            <a href="{{ url_for('select_pool') }}" class="btn btn-primary">
+                                Make Predictions
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %} 
